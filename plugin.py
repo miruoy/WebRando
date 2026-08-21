@@ -2,10 +2,10 @@
 # WebRando — random content from web sources, safe for unregistered users.
 #
 #   urbandict [term]   Random (or specific) Urban Dictionary definition.
-#   reddit <pool>       Random IMAGE from a pool of subreddits (config: pools.json).
+#   image <pool>       Random image from a configured pool (config: pools.json).
 #
-# All network access goes through urllib with a timeout and a real User-Agent;
-# no shell is ever spawned, so unregistered users can use it safely.
+# All network access goes through urllib with a timeout and a browser-like
+# User-Agent; no shell is ever spawned, so unregistered users can use it safely.
 ###
 import os
 import re
@@ -37,28 +37,63 @@ def _get_json(url, timeout=10):
 
 
 def _load_pools():
-    """Load pools.json from the plugin directory. Returns dict or {}."""
+    """Load pools.json from the plugin directory. Returns dict or {'__error__': ...}."""
     here = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(here, 'pools.json')
     try:
         with open(path, encoding='utf-8') as f:
             data = json.load(f)
-        # normaliseer: pool -> lijst van subreddit-namen
         pools = {}
         for name, val in data.items():
-            if isinstance(val, dict) and 'subreddits' in val:
-                subs = val['subreddits']
-            else:
-                subs = val  # ook accepteren als platte lijst
-            if isinstance(subs, (list, tuple)):
-                pools[name] = [str(s).strip().lstrip('r/').strip('/') for s in subs if s]
+            if isinstance(val, dict) and 'type' in val and 'url' in val:
+                pools[name] = val
         return pools
     except (OSError, ValueError) as e:
         return {'__error__': str(e)}
 
 
+def _image_from_pool(pool):
+    """Fetch a random image URL from a pool definition. Returns (url, error)."""
+    ptype = pool.get('type')
+    url = pool.get('url')
+    if not url:
+        return (None, 'pool has no url')
+    (data, err) = _get_json(url)
+    if err:
+        return (None, err)
+    if not data:
+        return (None, 'empty response')
+
+    try:
+        if ptype == 'thecatapi':
+            # [{"url": "https://cdn2.thecatapi.com/images/xxx.jpg"}]
+            return (data[0]['url'], None)
+        elif ptype == 'dogceo':
+            # {"message": "https://images.dog.ceo/breeds/xxx.jpg", "status": "success"}
+            return (data['message'], None)
+        elif ptype == 'randomdog':
+            # {"url": "https://random.dog/xxxx.mp4"}  (jpg/gif/mp4)
+            return (data['url'], None)
+        elif ptype == 'cataas':
+            # {"url": "https://cataas.com/cat/xxx"} (dict) of [{"url": "..."}] (list)
+            if isinstance(data, list):
+                img = data[0]['url'] if data else ''
+            else:
+                img = data.get('url', '')
+            if img.startswith('/'):
+                img = 'https://cataas.com' + img
+            return (img, None)
+        elif ptype == 'direct':
+            # de url zelf is al een image
+            return (url, None)
+        else:
+            return (None, 'unknown pool type: %s' % ptype)
+    except (KeyError, IndexError, TypeError) as e:
+        return (None, 'failed to parse response: %s' % e)
+
+
 class WebRando(callbacks.Plugin):
-    """Random web content: Urban Dictionary definitions and Reddit images."""
+    """Random web content: Urban Dictionary definitions and random images."""
 
     threaded = True
     priority = 100
@@ -85,7 +120,6 @@ class WebRando(callbacks.Plugin):
         if not data or not data.get('list'):
             irc.error(_('No definition found.'), Raise=True)
 
-        # Eerste (top) definitie; val terug op een willekeurige als die leeg is
         entry = data['list'][0]
         definition = (entry.get('definition') or '').strip()
         word = (entry.get('word') or term or '').strip()
@@ -99,15 +133,16 @@ class WebRando(callbacks.Plugin):
         irc.replies(lines, joiner=' | ')
     urbandict = wrap(urbandict, [additional('something')])
 
-    # -------------------------------------------------------------------- reddit
+    # --------------------------------------------------------------------- image
     @internationalizeDocstring
-    def reddit(self, irc, msg, args, pool):
+    def image(self, irc, msg, args, pool):
         """<pool>
 
-        Posts a random IMAGE from a configured pool of subreddits. Pools are
-        defined in pools.json (in the plugin directory). Example: a pool
-        "cat" might contain aww, cats, catpictures — `reddit cat` posts a
-        random image from one of those.
+        Posts a random image from a configured pool. Pools are defined in
+        pools.json (in the plugin directory). Example: a pool "cat" might use
+        thecatapi.com — `image cat` posts a random cat picture.
+
+        Supported pool types: thecatapi, dogceo, randomdog, cataas, direct.
         """
         if not pool:
             irc.error(_('You must specify a pool name (see pools.json).'), Raise=True)
@@ -120,38 +155,12 @@ class WebRando(callbacks.Plugin):
             avail = ', '.join(sorted(pools.keys())) or '(none)'
             irc.error(format(_('Unknown pool %s. Available: %s'), pool, avail), Raise=True)
 
-        subs = pools[pool]
-        # shuffle zodat niet altijd de eerste subreddit gekozen wordt
-        import random
-        random.shuffle(subs)
+        (img, err) = _image_from_pool(pools[pool])
+        if err:
+            irc.error(_('Could not fetch image: %s') % err, Raise=True)
+        irc.reply(img)
 
-        IMAGE_RE = re.compile(r'\.(jpg|jpeg|png|gif)$', re.I)
-        found = None
-        for sub in subs:
-            # Reddit's /random.json geeft een willekeurige post uit de sub
-            url = 'https://www.reddit.com/r/%s/random.json?limit=1' % sub
-            (data, err) = _get_json(url)
-            if err or not data:
-                continue
-            posts = data[0].get('data', {}).get('children', []) if isinstance(data, list) else []
-            for p in posts:
-                post = p.get('data', {})
-                img = post.get('url', '')
-                # accepteer i.redd.it / imgur directe images
-                if IMAGE_RE.search(img) or 'i.redd.it' in img or 'i.imgur.com' in img:
-                    found = img
-                    break
-            if found:
-                break
-
-        if not found:
-            irc.error(_('No image found in pool %s. Reddit often blocks '
-                        'datacenter IPs (HTTP 403) - if the bot runs on a '
-                        'server, this may fail; try from a residential IP or '
-                        'add Reddit OAuth later.') % pool, Raise=True)
-        irc.reply(found)
-
-    reddit = wrap(reddit, [additional('something')])
+    image = wrap(image, [additional('something')])
 
 
 Class = WebRando

@@ -9,7 +9,7 @@ A Limnoria plugin that posts random content from web sources, safe for
 | --- | --- |
 | `urbandict` | A random Urban Dictionary definition. |
 | `urbandict <term>` | The definition of `<term>` from Urban Dictionary. |
-| `reddit <pool>` | A random IMAGE from a configured pool of subreddits. |
+| `image <pool>` | A random image from a configured pool (config: `pools.json`). |
 
 ## How it works
 
@@ -18,37 +18,44 @@ A Limnoria plugin that posts random content from web sources, safe for
   and unregistered users can use it safely.
 - `urbandict` calls the public Urban Dictionary API
   (`api.urbandictionary.com/v0/random` and `/define?term=`).
-- `reddit` reads `pools.json` (in this directory), picks a random subreddit
-  from the requested pool, fetches a random post, and replies with the image
-  URL if it is a direct image (i.redd.it / i.imgur.com / `*.jpg|png|gif`).
-  Only images are posted — no text/link posts.
+- `image` reads `pools.json` (in this directory), fetches a random image from
+  the requested pool's source, and replies with the image URL.
 
 ## Configuration: pools.json
 
-Pools map a name to a list of subreddits. The plugin directory contains a
-sample `pools.json`:
+Each pool has a `type` (which source to use) and a `url`. The plugin directory
+ships with a sample `pools.json`:
 
 ```json
 {
-  "cat":  { "subreddits": ["aww", "cats", "catpictures", "MEOW_IRL"] },
-  "art":  { "subreddits": ["Art", "Painting", "DigitalArt", "Illustration"] },
-  "food": { "subreddits": ["FoodPorn", "Pizza", "steak", "Cooking"] },
-  "car":  { "subreddits": ["cars", "Autos", "industrial_design"] }
+  "cat":    { "type": "thecatapi", "url": "https://api.thecatapi.com/v1/images/search" },
+  "dog":    { "type": "dogceo",    "url": "https://dog.ceo/api/breeds/image/random" },
+  "woof":   { "type": "randomdog", "url": "https://random.dog/woof.json" },
+  "cataas": { "type": "cataas",    "url": "https://cataas.com/cat?json=true" }
 }
 ```
 
-Edit it to add your own pools, then create aliases in the bot:
+### Supported pool types
+
+| type | source | notes |
+| --- | --- | --- |
+| `thecatapi` | thecatapi.com | random cat picture (keyless) |
+| `dogceo` | dog.ceo | random dog picture (keyless) |
+| `randomdog` | random.dog | random dog (jpg/gif/mp4) (keyless) |
+| `cataas` | cataas.com | random cat (jpg/gif) (keyless) |
+| `direct` | the `url` itself is the image | for static/known image URLs |
+
+To add your own pool, edit `pools.json` and create an alias in the bot:
 
 ```
-alias add cat  "reddit cat"
-alias add art  "reddit art"
-alias add food "reddit food"
+alias add cat  "image cat"
+alias add dog  "image dog"
+alias add woof "image woof"
 ```
 
-Now `@cat`, `@art`, `@food` post a random image from their respective pool.
+Now `@cat`, `@dog`, `@woof` post a random image from their respective source.
 
-> Note: pool names are case-insensitive. Subreddit names are normalised
-> (leading `r/` or `/` is stripped).
+> Note: pool names are case-insensitive.
 
 ## Installation
 
@@ -66,26 +73,12 @@ code, remove the `__pycache__` directory and `touch` the `.py` files (or
 unload, delete, re-copy under a new name, then load) before reloading — a
 stale `.pyc` will keep the old code live.
 
-## Known limitation: Reddit 403 on datacenter IPs
-
-Reddit blocks most non-OAuth requests originating from datacenter/server IPs
-(including Hetzner/YouServer ranges). If the bot runs on such a host, the
-`reddit` command may fail with a `403 Blocked` error from Reddit. This is an
-environment restriction, not a plugin bug:
-
-- Urban Dictionary works from anywhere (it does not block datacenter IPs).
-- Reddit may work if the bot runs from a residential IP, or if you later add
-  Reddit OAuth (client_id + secret) to the fetch logic.
-
-The plugin reports a clear message when Reddit blocks the request, so it fails
-gracefully rather than crashing.
-
 ## Troubleshooting
 
 - **`Unknown pool X. Available: ...`** — the pool name is not in `pools.json`.
   Add it, or check the spelling (case-insensitive).
 - **`Failed to load pools.json: ...`** — the JSON file is missing or invalid.
   Fix `pools.json` in the plugin directory.
-- **`No image found in pool X. Reddit often blocks datacenter IPs...`** — see
-  the known limitation above; try later or from a different host.
-- **`Urban Dictionary request failed: ...`** — network issue or API down.
+- **`Could not fetch image: ...`** — network issue, the source is down, or the
+  API response changed. Urban Dictionary and the image APIs above are
+  keyless and generally not IP-blocked; if a specific source fails, try another.

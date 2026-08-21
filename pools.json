@@ -1,14 +1,6 @@
 {
-  "cat": {
-    "subreddits": ["aww", "cats", "catpictures", "MEOW_IRL"]
-  },
-  "art": {
-    "subreddits": ["Art", "Painting", "DigitalArt", "Illustration"]
-  },
-  "food": {
-    "subreddits": ["FoodPorn", "Pizza", "steak", "Cooking"]
-  },
-  "car": {
-    "subreddits": ["cars", "Autos", "industrial_design"]
-  }
+  "cat":   { "type": "thecatapi", "url": "https://api.thecatapi.com/v1/images/search" },
+  "dog":   { "type": "dogceo",    "url": "https://dog.ceo/api/breeds/image/random" },
+  "woof":  { "type": "randomdog", "url": "https://random.dog/woof.json" },
+  "cataas":{ "type": "cataas",    "url": "https://cataas.com/cat?json=true" }
 }
