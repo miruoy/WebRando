@@ -1,0 +1,14 @@
+{
+  "cat": {
+    "subreddits": ["aww", "cats", "catpictures", "MEOW_IRL"]
+  },
+  "art": {
+    "subreddits": ["Art", "Painting", "DigitalArt", "Illustration"]
+  },
+  "food": {
+    "subreddits": ["FoodPorn", "Pizza", "steak", "Cooking"]
+  },
+  "car": {
+    "subreddits": ["cars", "Autos", "industrial_design"]
+  }
+}
