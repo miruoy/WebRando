@@ -14,6 +14,7 @@
 # with this program; if not, see <https://www.gnu.org/licenses/>.
 
 ### WebRando — plugin entry point
+import supybot
 from . import plugin
 from . import config
 from importlib import reload
