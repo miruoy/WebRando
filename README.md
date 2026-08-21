@@ -82,3 +82,9 @@ stale `.pyc` will keep the old code live.
 - **`Could not fetch image: ...`** — network issue, the source is down, or the
   API response changed. Urban Dictionary and the image APIs above are
   keyless and generally not IP-blocked; if a specific source fails, try another.
+
+## License
+
+Licensed under the GNU General Public License v2 (GPL-2.0). See the
+`LICENSE` file for the full text.
+
