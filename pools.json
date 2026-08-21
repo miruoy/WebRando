@@ -2,6 +2,5 @@
   "cat":    { "type": "thecatapi", "url": "https://api.thecatapi.com/v1/images/search" },
   "dog":    { "type": "dogceo",    "url": "https://dog.ceo/api/breeds/image/random" },
   "woof":   { "type": "randomdog", "url": "https://random.dog/woof.json" },
-  "cataas": { "type": "cataas",    "url": "https://cataas.com/cat?json=true" },
-  "bender": { "type": "direct",    "url": "https://i.imgur.com/l85WHJg.gif" }
+  "cataas": { "type": "cataas",    "url": "https://cataas.com/cat?json=true" }
 }

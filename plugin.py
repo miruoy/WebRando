@@ -83,15 +83,7 @@ def _image_from_pool(pool):
             if img.startswith('/'):
                 img = 'https://cataas.com' + img
             return (img, None)
-        elif ptype == 'direct':
-            # de url zelf is al een image — geen request nodig
-            return (url, None)
         else:
-            # onbekend type: als de url eruitziet als een directe image,
-            # geef die terug i.p.v. een request te doen (voorkomt 429)
-            if url and (url.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4'))
-                        or 'imgur.com' in url or 'i.redd.it' in url):
-                return (url, None)
             return (None, 'unknown pool type: %s' % ptype)
     except (KeyError, IndexError, TypeError) as e:
         return (None, 'failed to parse response: %s' % e)
