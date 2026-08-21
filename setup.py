@@ -13,16 +13,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <https://www.gnu.org/licenses/>.
 
-### WebRando — plugin entry point
-from . import plugin
-from . import config
-from importlib import reload
-reload(plugin)  # In case we're being reloaded.
+from supybot.setup import plugin_setup
 
-__version__ = '1.0.0'
-__author__ = supybot.Author(name='Youri Matthys', nick='miruoy',
-                             email='miruoy@users.noreply.github.com')
-__contributors__ = {}
-__url__ = 'https://github.com/miruoy/WebRando'
-
-Class = plugin.Class
+plugin_setup(
+    'WebRando',
+)

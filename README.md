@@ -61,7 +61,19 @@ Now `@cat`, `@dog`, `@woof` post a random image from their respective source.
 
 Copy the plugin directory into your bot's plugin path, then load it:
 
+```
+### Via pip (from the git repo)
 ```bash
+pip3 install git+https://github.com/miruoy/WebRando.git
+# then in the bot:
+load WebRando
+```
+
+### Via PluginDownloader (after the repo is added to Limnoria's list)
+```bash
+@plugindownloader install miruoy
+```
+bash
 cp -r WebRando /path/to/your/bot/plugins/
 rm -rf /path/to/your/bot/plugins/WebRando/__pycache__
 # in the bot:

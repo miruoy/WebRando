@@ -13,16 +13,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <https://www.gnu.org/licenses/>.
 
-### WebRando — plugin entry point
-from . import plugin
-from . import config
-from importlib import reload
-reload(plugin)  # In case we're being reloaded.
+### WebRando — configuration
+import supybot.conf as conf
+import supybot.utils as utils
+from supybot.i18n import PluginInternationalization, internationalizeDocstring
+_ = PluginInternationalization('WebRando')
 
-__version__ = '1.0.0'
-__author__ = supybot.Author(name='Youri Matthys', nick='miruoy',
-                             email='miruoy@users.noreply.github.com')
-__contributors__ = {}
-__url__ = 'https://github.com/miruoy/WebRando'
-
-Class = plugin.Class
+WebRando = conf.registerPlugin('WebRando')
+# Add your configuration variables (if any) here, e.g.:
+# conf.registerGlobalValue(WebRando, 'someVariable',
+#     registry.Boolean(False, _("""Help for someVariable.""")))
