@@ -22,7 +22,7 @@ reload(plugin)  # In case we're being reloaded.
 
 __version__ = '1.0.0'
 __author__ = supybot.Author(name='Youri Matthys', nick='miruoy',
-                             email='yourimatthys+github@gmail.com')
+                             email='2657774+miruoy@users.noreply.github.com')
 __contributors__ = {}
 __url__ = 'https://github.com/miruoy/WebRando'
 
